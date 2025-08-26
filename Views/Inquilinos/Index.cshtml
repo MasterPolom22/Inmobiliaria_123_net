@@ -1,0 +1,91 @@
+@model IEnumerable<WebInmo.Models.Inquilino>
+@{
+    ViewData["Title"] = "Inquilinos";
+}
+<h1>Inquilinos</h1>
+
+<form method="get" class="mb-3">
+    <input name="q" class="form-control" placeholder="Buscar por DNI o Nombre" value="@Context.Request.Query["q"]" />
+</form>
+
+<p><a class="btn btn-primary" asp-action="Create">Nuevo Inquilino</a></p>
+
+<table class="table table-striped">
+    <thead>
+        <tr><th>DNI</th><th>Nombre</th><th></th></tr>
+    </thead>
+    <tbody>
+@foreach (var p in Model)
+{
+    <tr>
+        <td>@p.Id</td>
+        <td>@p.Dni</td>
+        <td>@p.Apellido</td>
+        <td>@p.Nombre</td>
+        <td>
+            <button type="button" class="btn btn-info btn-sm" onclick="showDetails(@p.Id)">Detalles</button>
+            <a class="btn btn-sm btn-outline-primary" asp-action="Edit" asp-route-id="@p.Id">Editar</a>
+            <a class="btn btn-sm btn-outline-danger" asp-action="Delete" asp-route-id="@p.Id">Eliminar</a>
+        </td>
+    </tr>
+}
+    </tbody>
+</table>
+
+<!-- Modal Bootstrap para Detalles -->
+<div class="modal fade" id="detailsModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Detalles del inquilino</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+        <!-- loader fijo que NO se reemplaza -->
+        <div id="detailsLoader" class="text-center py-4 d-none">
+          <div class="spinner-border" role="status"></div>
+        </div>
+        <!-- acá inyecto el partial -->
+        <div id="detailsBody"></div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+@section Scripts{
+<script>
+  const modalEl = document.getElementById('detailsModal');
+  const modal   = new bootstrap.Modal(modalEl);
+
+  async function showDetails(id){
+    const body   = document.getElementById('detailsBody');
+    const loader = document.getElementById('detailsLoader');
+
+    // reset estado
+    body.innerHTML = '';
+    loader.classList.remove('d-none');
+
+    modal.show();
+
+    try{
+      const r = await fetch(`/Inquilinos/DetailsPartial/${id}`, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      });
+      if(!r.ok){
+        body.innerHTML = `<div class="alert alert-danger">No se pudo cargar (HTTP ${r.status}).</div>`;
+      } else {
+        body.innerHTML = await r.text();
+      }
+    } catch(err){
+      body.innerHTML = `<div class="alert alert-danger">Error: ${err}</div>`;
+    } finally {
+      loader.classList.add('d-none');
+    }
+  }
+</script>
+}
